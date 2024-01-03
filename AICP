@@ -1,0 +1,171 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+// Constants
+const double CEMENT_WEIGHT_MIN = 24.9;
+const double CEMENT_WEIGHT_MAX = 25.1;
+const double GRAVEL_WEIGHT_MIN = 49.9;
+const double GRAVEL_WEIGHT_MAX = 50.1;
+const double SAND_WEIGHT_MIN = 49.9;
+const double SAND_WEIGHT_MAX = 50.1;
+const double CEMENT_PRICE = 3.0;
+const double GRAVEL_PRICE = 2.0;
+const double SAND_PRICE = 2.0;
+const double SPECIAL_PACK_LIMIT = 5;
+const double DISCOUNT_PRICE = 10.0;
+
+// Order class
+class Order {
+private:
+    int numCement;
+    int numGravel;
+    int numSand;
+
+public:
+    // Constructors
+    Order() : numCement(0), numGravel(0), numSand(0) {}
+
+    // Accessors
+    int getNumCement() const {
+        return numCement;
+    }
+
+    int getNumGravel() const {
+        return numGravel;
+    }
+
+    int getNumSand() const {
+        return numSand;
+    }
+
+    // Mutators
+    void setNumCement(int num) {
+        numCement = num;
+    }
+
+    void setNumGravel(int num) {
+        numGravel = num;
+    }
+
+    void setNumSand(int num) {
+        numSand = num;
+    }
+};
+
+// PriceCalculator class
+class PriceCalculator {
+public:
+    // Calculate regular price for the order
+    static double calculateRegularPrice(const Order& order) {
+        return order.getNumCement() * CEMENT_PRICE +
+               order.getNumGravel() * GRAVEL_PRICE +
+               order.getNumSand() * SAND_PRICE;
+    }
+
+    // Calculate discount price for the order
+    static double calculateDiscountPrice(const Order& order) {
+        int numSpecialPacks = static_cast<int>(std::min({
+            static_cast<double>(order.getNumCement()),
+            static_cast<double>(order.getNumGravel() / SPECIAL_PACK_LIMIT),
+            static_cast<double>(order.getNumSand() / SPECIAL_PACK_LIMIT)
+        }));
+
+        return calculateRegularPrice(order) - numSpecialPacks * DISCOUNT_PRICE;
+    }
+};
+
+// Function to check and accept/reject a single sack
+void checkSingleSack(double weight, char content) {
+    if (
+        (content == 'C' && weight >= CEMENT_WEIGHT_MIN && weight <= CEMENT_WEIGHT_MAX) ||
+        (content == 'G' && weight >= GRAVEL_WEIGHT_MIN && weight <= GRAVEL_WEIGHT_MAX) ||
+        (content == 'S' && weight >= SAND_WEIGHT_MIN && weight <= SAND_WEIGHT_MAX)
+    ) {
+        std::cout << "Accepted: Weight = " << weight << ", Content = " << content << std::endl;
+    } else {
+        std::cout << "Rejected: ";
+        if (content != 'C' && content != 'G' && content != 'S') {
+            std::cout << "Invalid content. ";
+        }
+        if (
+            (content == 'C' && (weight < CEMENT_WEIGHT_MIN || weight > CEMENT_WEIGHT_MAX)) ||
+            (content == 'G' && (weight < GRAVEL_WEIGHT_MIN || weight > GRAVEL_WEIGHT_MAX)) ||
+            (content == 'S' && (weight < SAND_WEIGHT_MIN || weight > SAND_WEIGHT_MAX))
+        ) {
+            std::cout << "Invalid weight.";
+        }
+        std::cout << std::endl;
+    }
+}
+
+int main() {
+    // TASK 1
+    double sackWeight;
+    char sackContent;
+
+    std::cout << "Enter weight of the sack: ";
+    std::cin >> sackWeight;
+    std::cout << "Enter content of the sack (C for cement, G for gravel, S for sand): ";
+    std::cin >> sackContent;
+
+    checkSingleSack(sackWeight, sackContent);
+
+    // TASK 2
+    Order customerOrder;
+    int numCement, numGravel, numSand;
+
+    std::cout << "Enter number of cement sacks: ";
+    std::cin >> numCement;
+    customerOrder.setNumCement(numCement);
+
+    std::cout << "Enter number of gravel sacks: ";
+    std::cin >> numGravel;
+    customerOrder.setNumGravel(numGravel);
+
+    std::cout << "Enter number of sand sacks: ";
+    std::cin >> numSand;
+    customerOrder.setNumSand(numSand);
+
+    int totalRejected = 0;
+
+    // Check and accumulate rejected sacks
+    if (numCement > 0) {
+        checkSingleSack(CEMENT_WEIGHT_MIN, 'C');
+        checkSingleSack(CEMENT_WEIGHT_MAX, 'C');
+        totalRejected += (numCement - 1);
+    }
+
+    if (numGravel > 0) {
+        checkSingleSack(GRAVEL_WEIGHT_MIN, 'G');
+        checkSingleSack(GRAVEL_WEIGHT_MAX, 'G');
+        totalRejected += (numGravel - 1);
+    }
+
+    if (numSand > 0) {
+        checkSingleSack(SAND_WEIGHT_MIN, 'S');
+        checkSingleSack(SAND_WEIGHT_MAX, 'S');
+        totalRejected += (numSand - 1);
+    }
+
+    // TASK 3
+    std::cout << "Total weight of the order: "
+              << customerOrder.getNumCement() * CEMENT_WEIGHT_MIN
+              + customerOrder.getNumGravel() * GRAVEL_WEIGHT_MIN
+              + customerOrder.getNumSand() * SAND_WEIGHT_MIN
+              << " kilograms" << std::endl;
+
+    std::cout << "Number of sacks rejected from the order: " << totalRejected << std::endl;
+
+    double regularPrice = PriceCalculator::calculateRegularPrice(customerOrder);
+    double discountPrice = PriceCalculator::calculateDiscountPrice(customerOrder);
+
+    std::cout << "Regular price for the order: $" << regularPrice << std::endl;
+    if (discountPrice < regularPrice) {
+        std::cout << "Discounted price for the order: $" << discountPrice << std::endl;
+        std::cout << "Amount saved: $" << (regularPrice - discountPrice) << std::endl;
+    }
+
+    return 0;
+}
+
